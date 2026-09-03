@@ -1598,6 +1598,13 @@ availability is reported (`credentialAvailable`) but not gated, so the contract
 stays inspectable even when the credential is not currently exported. Exit code:
 `0` on success, `2` on a contract/usage error.
 
+MiniMax has built-in global and China entries, including
+the current `MiniMax-M3` and `MiniMax-M2.7` catalog. Declare
+`{ "id": "minimax" }` for the global endpoint or
+`{ "id": "minimax-cn" }` for the China endpoint, then export the
+credential as `MINIMAX_API_KEY`. An explicit `baseUrl`, `model`,
+`models`, or `apiKeyEnv` in the entry still overrides the corresponding preset.
+
 ```text
 Provider:     alt
 Contract:     oh-my-cli.provider-contract v1 (settings contract version 1)

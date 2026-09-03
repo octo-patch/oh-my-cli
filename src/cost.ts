@@ -23,6 +23,14 @@ export const MODEL_PRICES: Record<string, ModelPrice> = {
   "gpt-4o-mini": { promptPerM: 0.15, completionPerM: 0.6 },
   "gpt-4.1": { promptPerM: 2, completionPerM: 8 },
   "gpt-4.1-mini": { promptPerM: 0.4, completionPerM: 1.6 },
+  "MiniMax-M3": {
+    promptPerM: 0.6,
+    completionPerM: 2.4,
+  },
+  "MiniMax-M2.7": {
+    promptPerM: 0.3,
+    completionPerM: 1.2,
+  },
 };
 
 // Conservative fallback used when the model is not in the table, so cost is

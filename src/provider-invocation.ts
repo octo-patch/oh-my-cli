@@ -36,6 +36,7 @@ import {
   resolveProviderReadiness,
   resolveProviderConfig,
   type ProviderEntry,
+  type ProviderEndpointSource,
 } from "./provider-contract.js";
 import {
   clampInvokeTimeout,
@@ -308,7 +309,7 @@ export interface ProviderInvocationReport {
   contractVersion: number;
   providerId: string;
   endpoint: string;
-  endpointSource: "settings" | "default";
+  endpointSource: ProviderEndpointSource;
   model: string;
   credentialVariable: string;
   credentialFromSettings: boolean;

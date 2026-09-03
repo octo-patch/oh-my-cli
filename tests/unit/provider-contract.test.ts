@@ -6,6 +6,7 @@ import {
   PROVIDER_CONTRACT_SCHEMA,
   PROVIDER_CONTRACT_VERSION,
   SUPPORTED_PROVIDER_CONTRACT_VERSIONS,
+  BUILTIN_PROVIDER_PRESETS,
   parseProviderContract,
   selectProviderEntry,
   resolveProviderConfig,
@@ -139,6 +140,67 @@ describe("parseProviderContract: trust boundary and validation", () => {
     expect(() =>
       parseProviderContract({ contractVersion: 1, entries: [{ id: "a", model: "" }] }),
     ).toThrow(/model is required/);
+    expect(() =>
+      parseProviderContract({ contractVersion: 1, entries: [{ id: "a" }] }),
+    ).toThrow(/model is required/);
+  });
+});
+
+describe("built-in MiniMax provider entries", () => {
+  it("resolves the global endpoint and current model catalog from the provider id", () => {
+    const contract = parseProviderContract({
+      contractVersion: 1,
+      entries: [{ id: "minimax" }],
+    });
+    const entry = contract.entries[0];
+    expect(entry.model).toBe("MiniMax-M3");
+    expect(entry.models).toEqual(["MiniMax-M3", "MiniMax-M2.7"]);
+    expect(entry.apiKeyEnv).toBe("MINIMAX_API_KEY");
+    expect(entry.capabilities).toEqual({ vision: true, tools: true, streaming: true });
+
+    const config = resolveProviderConfig(entry, {
+      env: { MINIMAX_API_KEY: "test-key" },
+    });
+    expect(config.baseUrl).toBe("https://api.minimax.io/v1");
+    expect(config.model).toBe("MiniMax-M3");
+  });
+
+  it("resolves the China endpoint from the regional provider id", () => {
+    const contract = parseProviderContract({
+      contractVersion: 1,
+      entries: [{ id: "minimax-cn" }],
+    });
+    const entry = contract.entries[0];
+    const config = resolveProviderConfig(entry, {
+      env: { MINIMAX_API_KEY: "test-key" },
+    });
+    expect(config.baseUrl).toBe("https://api.minimaxi.com/v1");
+    expect(BUILTIN_PROVIDER_PRESETS["minimax-cn"].model).toBe("MiniMax-M3");
+  });
+
+  it("keeps explicit entry fields above the built-in defaults", () => {
+    const contract = parseProviderContract({
+      contractVersion: 1,
+      entries: [{ id: "minimax", baseUrl: "https://override.example/v1", model: "custom-model" }],
+    });
+    const config = resolveProviderConfig(contract.entries[0], {
+      env: { MINIMAX_API_KEY: "test-key" },
+    });
+    expect(config.baseUrl).toBe("https://override.example/v1");
+    expect(config.model).toBe("custom-model");
+  });
+
+  it("reports built-in endpoint provenance without exposing its path", () => {
+    const settings = writeSettings({
+      providers: { contractVersion: 1, entries: [{ id: "minimax" }] },
+    });
+    const report = collectProviderContract({
+      settingsPath: settings,
+      env: { MINIMAX_API_KEY: "test-key" },
+    });
+    expect(report.endpoint).toBe("api.minimax.io");
+    expect(report.endpointSource).toBe("builtin");
+    expect(report.modelCatalog).toEqual(["MiniMax-M3", "MiniMax-M2.7"]);
   });
 });
 

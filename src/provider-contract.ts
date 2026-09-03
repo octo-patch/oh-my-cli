@@ -64,6 +64,40 @@ export interface ProviderEntry {
   capabilities?: ProviderCapabilityFlags;
 }
 
+export type ProviderEndpointSource = "settings" | "builtin" | "default";
+
+// Built-in entries keep common provider configuration concise while preserving
+// the contract's trust boundary: users still opt in by declaring the provider
+// id, and credentials remain in a named environment variable.
+export interface ProviderPreset {
+  baseUrl: string;
+  model: string;
+  models: readonly string[];
+  apiKeyEnv: string;
+  capabilities: Readonly<ProviderCapabilityFlags>;
+}
+
+export const BUILTIN_PROVIDER_PRESETS = {
+  "minimax": {
+    baseUrl: "https://api.minimax.io/v1",
+    model: "MiniMax-M3",
+    models: ["MiniMax-M3", "MiniMax-M2.7"],
+    apiKeyEnv: "MINIMAX_API_KEY",
+    capabilities: { vision: true, tools: true, streaming: true },
+  },
+  "minimax-cn": {
+    baseUrl: "https://api.minimaxi.com/v1",
+    model: "MiniMax-M3",
+    models: ["MiniMax-M3", "MiniMax-M2.7"],
+    apiKeyEnv: "MINIMAX_API_KEY",
+    capabilities: { vision: true, tools: true, streaming: true },
+  },
+} as const satisfies Readonly<Record<string, ProviderPreset>>;
+
+function builtinProviderPreset(id: string): ProviderPreset | undefined {
+  return (BUILTIN_PROVIDER_PRESETS as Readonly<Record<string, ProviderPreset>>)[id];
+}
+
 // The validated `providers` section: a negotiated contract version, an optional
 // default provider id, and the validated entries (ids guaranteed unique).
 export interface ProviderContract {
@@ -83,7 +117,7 @@ const CapabilitySchema = z
 const ProviderEntrySchema = z.object({
   id: z.string().min(1, "providers.entries[].id must be a non-empty string"),
   baseUrl: z.string().url("providers.entries[].baseUrl must be a valid URL").optional(),
-  model: z.string().min(1, "providers.entries[].model is required"),
+  model: z.string().min(1, "providers.entries[].model is required").optional(),
   models: z.array(z.string().min(1, "providers.entries[].models entries must be non-empty")).optional(),
   apiKeyEnv: z
     .string()
@@ -206,11 +240,33 @@ export function parseProviderContract(section: unknown): ProviderContract {
       const issues = result.error.issues.map((i) => i.message).join("; ");
       throw new Error(`Settings error: ${issues}`);
     }
+    const preset = builtinProviderPreset(result.data.id);
+    const model = result.data.model ?? preset?.model;
+    if (model === undefined) {
+      throw new Error("Settings error: providers.entries[].model is required");
+    }
     if (seen.has(result.data.id)) {
       throw new Error(`Settings error: duplicate provider id "${result.data.id}"`);
     }
     seen.add(result.data.id);
-    entries.push(result.data);
+    entries.push({
+      id: result.data.id,
+      model,
+      ...(result.data.baseUrl !== undefined ? { baseUrl: result.data.baseUrl } : {}),
+      ...(result.data.models !== undefined
+        ? { models: result.data.models }
+        : preset
+          ? { models: [...preset.models] }
+          : {}),
+      ...(result.data.apiKeyEnv !== undefined
+        ? { apiKeyEnv: result.data.apiKeyEnv }
+        : preset
+          ? { apiKeyEnv: preset.apiKeyEnv }
+          : {}),
+      ...(result.data.capabilities !== undefined || preset
+        ? { capabilities: { ...preset?.capabilities, ...result.data.capabilities } }
+        : {}),
+    });
   });
 
   if (def !== undefined && !seen.has(def)) {
@@ -263,7 +319,7 @@ export function resolveProviderConfig(
   opts: { env?: Record<string, string | undefined> } = {},
 ): Config {
   const env = opts.env ?? process.env;
-  const baseUrl = entry.baseUrl ?? DEFAULT_BASE_URL;
+  const { baseUrl } = resolveProviderEndpoint(entry);
   if (!isValidUrl(baseUrl)) {
     throw new Error(`Provider error: provider "${entry.id}" base URL is not a valid URL`);
   }
@@ -286,7 +342,7 @@ export interface ProviderContractReport {
   contractVersion: number;
   providerId: string;
   endpoint: string;
-  endpointSource: "settings" | "default";
+  endpointSource: ProviderEndpointSource;
   model: string;
   modelCatalog: string[];
   credentialVariable: string;
@@ -301,7 +357,7 @@ export function buildProviderContractReport(facts: {
   contractVersion: number;
   entry: ProviderEntry;
   baseUrl: string;
-  endpointSource: "settings" | "default";
+  endpointSource: ProviderEndpointSource;
   credentialVariable: string;
   credentialFromSettings: boolean;
   credentialAvailable: boolean;
@@ -375,7 +431,7 @@ export interface ProviderReadiness {
   state: ProviderReadinessState;
   reason: string;
   baseUrl: string;
-  endpointSource: "settings" | "default";
+  endpointSource: ProviderEndpointSource;
   endpointValid: boolean;
   credentialVariable: string;
   credentialFromSettings: boolean;
@@ -387,7 +443,7 @@ export function resolveProviderReadiness(
   opts: { env?: Record<string, string | undefined> } = {},
 ): ProviderReadiness {
   const env = opts.env ?? process.env;
-  const baseUrl = entry.baseUrl ?? DEFAULT_BASE_URL;
+  const { baseUrl, endpointSource } = resolveProviderEndpoint(entry);
   const endpointValid = isValidUrl(baseUrl);
   const credentialVariable = entry.apiKeyEnv ?? "OPENAI_API_KEY";
   const credentialAvailable = envValue(env, credentialVariable) !== undefined;
@@ -404,12 +460,26 @@ export function resolveProviderReadiness(
     state,
     reason,
     baseUrl,
-    endpointSource: entry.baseUrl ? "settings" : "default",
+    endpointSource,
     endpointValid,
     credentialVariable,
     credentialFromSettings: entry.apiKeyEnv !== undefined,
     credentialAvailable,
   };
+}
+
+function resolveProviderEndpoint(entry: ProviderEntry): {
+  baseUrl: string;
+  endpointSource: ProviderEndpointSource;
+} {
+  if (entry.baseUrl !== undefined) {
+    return { baseUrl: entry.baseUrl, endpointSource: "settings" };
+  }
+  const preset = builtinProviderPreset(entry.id);
+  if (preset !== undefined) {
+    return { baseUrl: preset.baseUrl, endpointSource: "builtin" };
+  }
+  return { baseUrl: DEFAULT_BASE_URL, endpointSource: "default" };
 }
 
 // Read the user settings file, negotiate the provider contract, select one
