@@ -1598,12 +1598,17 @@ availability is reported (`credentialAvailable`) but not gated, so the contract
 stays inspectable even when the credential is not currently exported. Exit code:
 `0` on success, `2` on a contract/usage error.
 
-MiniMax has built-in global and China entries, including
-the current `MiniMax-M3` and `MiniMax-M2.7` catalog. Declare
-`{ "id": "minimax" }` for the global endpoint or
-`{ "id": "minimax-cn" }` for the China endpoint, then export the
+MiniMax has built-in global and China entries, defaulting to
+`MiniMax-M3.1-Flash` with `MiniMax-M3` as the other catalog choice. Declare
+`{ "id": "minimax" }` for `https://api.minimax.io/v1` or
+`{ "id": "minimax-cn" }` for `https://api.minimax.cn/v1`, then export the
 credential as `MINIMAX_API_KEY`. An explicit `baseUrl`, `model`,
-`models`, or `apiKeyEnv` in the entry still overrides the corresponding preset.
+`models`, or `apiKeyEnv` in the entry still overrides the corresponding preset,
+including saved legacy model IDs. Requests use the existing Chat Completions
+transport with the API's default thinking behavior. Separate streamed reasoning
+is retained in assistant history for subsequent tool turns. Cost estimates use Flash's
+standard input/output rates; M3 uses its upper standard tier conservatively
+because run totals do not retain per-request context sizes or cache usage.
 
 ```text
 Provider:     alt

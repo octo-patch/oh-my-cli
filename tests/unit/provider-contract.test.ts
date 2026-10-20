@@ -153,8 +153,8 @@ describe("built-in MiniMax provider entries", () => {
       entries: [{ id: "minimax" }],
     });
     const entry = contract.entries[0];
-    expect(entry.model).toBe("MiniMax-M3");
-    expect(entry.models).toEqual(["MiniMax-M3", "MiniMax-M2.7"]);
+    expect(entry.model).toBe("MiniMax-M3.1-Flash");
+    expect(entry.models).toEqual(["MiniMax-M3.1-Flash", "MiniMax-M3"]);
     expect(entry.apiKeyEnv).toBe("MINIMAX_API_KEY");
     expect(entry.capabilities).toEqual({ vision: true, tools: true, streaming: true });
 
@@ -162,7 +162,7 @@ describe("built-in MiniMax provider entries", () => {
       env: { MINIMAX_API_KEY: "test-key" },
     });
     expect(config.baseUrl).toBe("https://api.minimax.io/v1");
-    expect(config.model).toBe("MiniMax-M3");
+    expect(config.model).toBe("MiniMax-M3.1-Flash");
   });
 
   it("resolves the China endpoint from the regional provider id", () => {
@@ -174,8 +174,8 @@ describe("built-in MiniMax provider entries", () => {
     const config = resolveProviderConfig(entry, {
       env: { MINIMAX_API_KEY: "test-key" },
     });
-    expect(config.baseUrl).toBe("https://api.minimaxi.com/v1");
-    expect(BUILTIN_PROVIDER_PRESETS["minimax-cn"].model).toBe("MiniMax-M3");
+    expect(config.baseUrl).toBe("https://api.minimax.cn/v1");
+    expect(BUILTIN_PROVIDER_PRESETS["minimax-cn"].model).toBe("MiniMax-M3.1-Flash");
   });
 
   it("keeps explicit entry fields above the built-in defaults", () => {
@@ -190,6 +190,25 @@ describe("built-in MiniMax provider entries", () => {
     expect(config.model).toBe("custom-model");
   });
 
+  it.each(["minimax", "minimax-cn"])("preserves saved models and custom catalogs for %s", (id) => {
+    const contract = parseProviderContract({
+      contractVersion: 1,
+      entries: [{
+        id,
+        model: "MiniMax-M2.7",
+        models: ["custom-model", "MiniMax-M2.7"],
+        apiKeyEnv: "CUSTOM_KEY",
+        capabilities: { vision: false },
+      }],
+    });
+    const entry = contract.entries[0];
+    expect(entry.model).toBe("MiniMax-M2.7");
+    expect(entry.models).toEqual(["custom-model", "MiniMax-M2.7"]);
+    expect(entry.apiKeyEnv).toBe("CUSTOM_KEY");
+    expect(entry.capabilities).toEqual({ vision: false, tools: true, streaming: true });
+    expect(resolveProviderConfig(entry, { env: { CUSTOM_KEY: "test-key" } }).model).toBe("MiniMax-M2.7");
+  });
+
   it("reports built-in endpoint provenance without exposing its path", () => {
     const settings = writeSettings({
       providers: { contractVersion: 1, entries: [{ id: "minimax" }] },
@@ -200,7 +219,7 @@ describe("built-in MiniMax provider entries", () => {
     });
     expect(report.endpoint).toBe("api.minimax.io");
     expect(report.endpointSource).toBe("builtin");
-    expect(report.modelCatalog).toEqual(["MiniMax-M3", "MiniMax-M2.7"]);
+    expect(report.modelCatalog).toEqual(["MiniMax-M3.1-Flash", "MiniMax-M3"]);
   });
 });
 

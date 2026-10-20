@@ -12,6 +12,11 @@ export interface StreamedText {
   delta: string;
 }
 
+export interface StreamedReasoning {
+  type: "reasoning";
+  delta: string;
+}
+
 export interface StreamedToolCall {
   type: "tool_call";
   id: string;
@@ -44,7 +49,7 @@ export interface StreamedRetry {
   delayMs: number;
 }
 
-export type StreamEvent = StreamedText | StreamedToolCall | StreamedUsage | StreamedRetry;
+export type StreamEvent = StreamedText | StreamedReasoning | StreamedToolCall | StreamedUsage | StreamedRetry;
 
 // A provider call as a stream of events. `streamChat` is the network
 // implementation; tests and the deterministic task-fixture replay (#224) supply
@@ -300,6 +305,11 @@ async function* streamOnce(
     if (!choice) continue;
 
     const delta = choice.delta;
+    // Flash returns thinking separately; retain it for subsequent tool turns.
+    const reasoning = (delta as { reasoning_content?: unknown })?.reasoning_content;
+    if (typeof reasoning === "string" && reasoning) {
+      yield { type: "reasoning", delta: reasoning };
+    }
     if (delta?.content) {
       yield { type: "text", delta: delta.content };
     }
@@ -350,6 +360,7 @@ export function toOpenAIMessage(msg: SessionMessage): OpenAI.ChatCompletionMessa
     return {
       role: "assistant",
       content: msg.content ?? null,
+      ...(msg.reasoning_content !== undefined ? { reasoning_content: msg.reasoning_content } : {}),
       tool_calls: msg.tool_calls.map((tc) => ({
         id: tc.id,
         type: "function" as const,
@@ -378,5 +389,8 @@ export function toOpenAIMessage(msg: SessionMessage): OpenAI.ChatCompletionMessa
   return {
     role: msg.role as "system" | "user" | "assistant",
     content: msg.content ?? "",
+    ...(msg.role === "assistant" && msg.reasoning_content !== undefined
+      ? { reasoning_content: msg.reasoning_content }
+      : {}),
   };
 }

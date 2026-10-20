@@ -9,6 +9,8 @@ import type { SessionLock } from "./session-lock.js";
 export interface SessionMessage {
   role: "system" | "user" | "assistant" | "tool";
   content?: string | null;
+  // Separate assistant thinking, retained for MiniMax tool-call continuity.
+  reasoning_content?: string;
   tool_calls?: Array<{
     id: string;
     type: "function";

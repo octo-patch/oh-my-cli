@@ -15,7 +15,11 @@ describe("lookupModelPrice", () => {
     expect(price).toEqual(MODEL_PRICES["gpt-4o"]);
   });
 
-  it("matches the current MiniMax models", () => {
+  it("matches current MiniMax models and retains legacy estimates", () => {
+    expect(lookupModelPrice("MiniMax-M3.1-Flash")).toEqual({
+      known: true,
+      price: { promptPerM: 0.15, completionPerM: 0.6 },
+    });
     expect(lookupModelPrice("MiniMax-M3")).toEqual({
       known: true,
       price: {

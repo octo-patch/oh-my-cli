@@ -629,6 +629,7 @@ export async function runAgent(
     }
 
     let assistantText = "";
+    let assistantReasoning = "";
     let assistantToolCalls: Array<{ id: string; name: string; arguments: string }> = [];
 
     // Per-message timing (#241): the wall-clock just before the request, the
@@ -649,6 +650,7 @@ export async function runAgent(
     let exhaustedEmpty = false;
     while (true) {
       assistantText = "";
+      assistantReasoning = "";
       assistantToolCalls = [];
       roundStart = now();
       firstTokenAt = null;
@@ -660,6 +662,8 @@ export async function runAgent(
             if (firstTokenAt === null) firstTokenAt = now();
             assistantText += event.delta;
             sink.assistantDelta(event.delta);
+          } else if (event.type === "reasoning") {
+            assistantReasoning += event.delta;
           } else if (event.type === "tool_call") {
             assistantToolCalls.push({ id: event.id, name: event.name, arguments: event.arguments });
           } else if (event.type === "usage") {
@@ -725,6 +729,7 @@ export async function runAgent(
           !fellBack &&
           transient !== null &&
           assistantText.length === 0 &&
+          assistantReasoning.length === 0 &&
           assistantToolCalls.length === 0
         ) {
           if (hasUsage) {
@@ -891,7 +896,11 @@ export async function runAgent(
     if (final) {
       // Final answer
       finalText = assistantText;
-      const assistantMsg: SessionMessage = { role: "assistant", content: assistantText };
+      const assistantMsg: SessionMessage = {
+        role: "assistant",
+        content: assistantText,
+        ...(assistantReasoning ? { reasoning_content: assistantReasoning } : {}),
+      };
       messages.push(assistantMsg);
       opts.onMessage(assistantMsg);
       return {
@@ -914,6 +923,7 @@ export async function runAgent(
     const assistantMsg: SessionMessage = {
       role: "assistant",
       content: assistantText || null,
+      ...(assistantReasoning ? { reasoning_content: assistantReasoning } : {}),
       tool_calls: assistantToolCalls.map((tc) => ({
         id: tc.id,
         type: "function",

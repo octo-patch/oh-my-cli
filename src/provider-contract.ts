@@ -80,15 +80,15 @@ export interface ProviderPreset {
 export const BUILTIN_PROVIDER_PRESETS = {
   "minimax": {
     baseUrl: "https://api.minimax.io/v1",
-    model: "MiniMax-M3",
-    models: ["MiniMax-M3", "MiniMax-M2.7"],
+    model: "MiniMax-M3.1-Flash",
+    models: ["MiniMax-M3.1-Flash", "MiniMax-M3"],
     apiKeyEnv: "MINIMAX_API_KEY",
     capabilities: { vision: true, tools: true, streaming: true },
   },
   "minimax-cn": {
-    baseUrl: "https://api.minimaxi.com/v1",
-    model: "MiniMax-M3",
-    models: ["MiniMax-M3", "MiniMax-M2.7"],
+    baseUrl: "https://api.minimax.cn/v1",
+    model: "MiniMax-M3.1-Flash",
+    models: ["MiniMax-M3.1-Flash", "MiniMax-M3"],
     apiKeyEnv: "MINIMAX_API_KEY",
     capabilities: { vision: true, tools: true, streaming: true },
   },

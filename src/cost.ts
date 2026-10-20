@@ -23,10 +23,17 @@ export const MODEL_PRICES: Record<string, ModelPrice> = {
   "gpt-4o-mini": { promptPerM: 0.15, completionPerM: 0.6 },
   "gpt-4.1": { promptPerM: 2, completionPerM: 8 },
   "gpt-4.1-mini": { promptPerM: 0.4, completionPerM: 1.6 },
+  "MiniMax-M3.1-Flash": {
+    promptPerM: 0.15,
+    completionPerM: 0.6,
+  },
+  // M3 uses the upper standard tier as a conservative estimate: the run tally
+  // does not retain per-request context sizes or cache usage for tiered billing.
   "MiniMax-M3": {
     promptPerM: 0.6,
     completionPerM: 2.4,
   },
+  // Keep pricing for explicitly configured legacy models.
   "MiniMax-M2.7": {
     promptPerM: 0.3,
     completionPerM: 1.2,
