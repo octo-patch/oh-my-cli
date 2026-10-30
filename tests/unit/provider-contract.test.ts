@@ -174,7 +174,7 @@ describe("built-in MiniMax provider entries", () => {
     const config = resolveProviderConfig(entry, {
       env: { MINIMAX_API_KEY: "test-key" },
     });
-    expect(config.baseUrl).toBe("https://api.minimax.cn/v1");
+    expect(config.baseUrl).toBe("https://api.minimaxi.com/v1");
     expect(BUILTIN_PROVIDER_PRESETS["minimax-cn"].model).toBe("MiniMax-M3.1-Flash");
   });
 

@@ -86,7 +86,7 @@ export const BUILTIN_PROVIDER_PRESETS = {
     capabilities: { vision: true, tools: true, streaming: true },
   },
   "minimax-cn": {
-    baseUrl: "https://api.minimax.cn/v1",
+    baseUrl: "https://api.minimaxi.com/v1",
     model: "MiniMax-M3.1-Flash",
     models: ["MiniMax-M3.1-Flash", "MiniMax-M3"],
     apiKeyEnv: "MINIMAX_API_KEY",

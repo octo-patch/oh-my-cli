@@ -1601,7 +1601,7 @@ stays inspectable even when the credential is not currently exported. Exit code:
 MiniMax has built-in global and China entries, defaulting to
 `MiniMax-M3.1-Flash` with `MiniMax-M3` as the other catalog choice. Declare
 `{ "id": "minimax" }` for `https://api.minimax.io/v1` or
-`{ "id": "minimax-cn" }` for `https://api.minimax.cn/v1`, then export the
+`{ "id": "minimax-cn" }` for `https://api.minimaxi.com/v1`, then export the
 credential as `MINIMAX_API_KEY`. An explicit `baseUrl`, `model`,
 `models`, or `apiKeyEnv` in the entry still overrides the corresponding preset,
 including saved legacy model IDs. Requests use the existing Chat Completions

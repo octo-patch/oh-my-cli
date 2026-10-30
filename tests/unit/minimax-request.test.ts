@@ -44,7 +44,7 @@ function capturedRequest() {
 }
 
 function expectedUrl(id: string, baseUrl?: string): string {
-  return `${baseUrl ?? (id === "minimax" ? "https://api.minimax.io/v1" : "https://api.minimax.cn/v1")}/chat/completions`;
+  return `${baseUrl ?? (id === "minimax" ? "https://api.minimax.io/v1" : "https://api.minimaxi.com/v1")}/chat/completions`;
 }
 
 describe("MiniMax serialized requests", () => {
